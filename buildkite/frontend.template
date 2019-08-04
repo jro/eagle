@@ -1,0 +1,103 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+
+  "Description": "Sets up load balancer and web server pool.",
+
+  "Parameters": {
+    "FrontendAMI": {
+      "Description": "The AMI ID for use with frontend servers",
+      "Type": "String",
+      "MinLength": "12",
+      "MaxLength": "12"
+    }
+  },
+
+  "Resources": {
+    "ElasticLoadBalancer": {
+      "Type": "AWS::ElasticLoadBalancing::LoadBalancer",
+      "Properties": {
+        "AvailabilityZones": { "Fn::GetAZs": "" },
+        "CrossZone" : "true",
+        "Listeners": [ {
+          "LoadBalancerPort": "80",
+          "InstancePort": "80",
+          "Protocol": "HTTP"
+        } ],
+        "HealthCheck": {
+          "Target": "HTTP:80/",
+          "HealthyThreshold": "2",
+          "UnhealthyThreshold": "5",
+          "Interval": "30",
+          "Timeout": "5"
+        },
+        "ConnectionDrainingPolicy": {
+          "Enabled": "true",
+          "Timeout": "300"
+        }
+      }
+    },
+    "WebServerGroup": {
+      "Type": "AWS::AutoScaling::AutoScalingGroup",
+      "Properties": {
+        "AvailabilityZones": { "Fn::GetAZs": "" },
+        "LaunchConfigurationName": { "Ref": "LaunchConfig" },
+        "MinSize": "2",
+        "MaxSize": "2",
+        "Cooldown": "30",
+        "HealthCheckType": "ELB",
+        "HealthCheckGracePeriod" : "120",
+        "LoadBalancerNames": [ { "Ref": "ElasticLoadBalancer" } ]
+      },
+      "UpdatePolicy": {
+        "AutoScalingRollingUpdate": {
+          "MinInstancesInService": "1",
+          "MaxBatchSize": "1",
+          "PauseTime" : "PT2M"
+        }
+      }
+    },
+    "LaunchConfig": {
+      "Type": "AWS::AutoScaling::LaunchConfiguration",
+      "Metadata" : {
+        "Comment" : "Install a simple application",
+        "AWS::CloudFormation::Init" : {
+          "config" : {
+          }
+        }
+      },
+      "Properties": {
+        "KeyName": "admin",
+        "ImageId": { "Ref": "FrontendAMI" },
+        "SecurityGroups": [ { "Ref": "InstanceSecurityGroup" } ],
+        "InstanceType": "t2.micro",
+        "UserData"       : { "Fn::Base64" : { "Fn::Join" : ["", [
+             "#!/bin/bash -xe\n",
+        ]]}}
+      }
+    },
+
+    "InstanceSecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "Enable SSH access and HTTP access on the configured port",
+        "SecurityGroupIngress": [ {
+          "IpProtocol": "tcp",
+          "FromPort": "22",
+          "ToPort": "22",
+          "CidrIp": "0.0.0.0/0"
+        }, {
+          "IpProtocol": "tcp",
+          "FromPort": "80",
+          "ToPort": "80",
+          "CidrIp": "0.0.0.0/0"
+        } ]
+      }
+    }
+  },
+  "Outputs": {
+    "URL": {
+      "Description": "URL of the website",
+      "Value": { "Fn::Join": [ "", [ "http://", { "Fn::GetAtt": [ "ElasticLoadBalancer", "DNSName" ] } ] ] }
+    }
+  }
+}

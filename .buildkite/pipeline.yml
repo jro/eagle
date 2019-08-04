@@ -1,0 +1,12 @@
+steps:
+  - name: "Run unit tests"
+    command: "echo 'if we had them!'"
+  - wait
+  - name: "Create deploy AMI"
+    command: "buildkite/create_image"
+  - wait
+  - name: "Deploy"
+    command: "buildkite/deploy"
+  - wait
+  - name: "Validate"
+    command: "buildkite/validate"

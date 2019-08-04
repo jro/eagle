@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+
+set -e
+
+PACKER_VERSION="0.10.1"
+TERRAFORM_VERSION="0.7.0"
+
+MY_ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && cd .. && pwd )"
+VENDOR=${MY_ROOT}/vendor
+VENDOR_BIN=${VENDOR}/bin/
+
+function install_packer ()
+{
+  cd ${VENDOR}/src
+  rm -f packer.zip
+  curl --silent --output packer.zip \
+  https://releases.hashicorp.com/packer/${PACKER_VERSION}/packer_${PACKER_VERSION}_linux_amd64.zip
+
+  mkdir -p ${VENDOR}/packer && cd ${VENDOR}/packer
+  unzip ${VENDOR}/src/packer.zip -d .
+
+  cd ${VENDOR_BIN}
+  ln -sf ${VENDOR}/packer/packer packer
+}
+
+function install_terraform ()
+{
+  cd ${VENDOR}/src
+  rm -f terraform.zip
+  curl --silent --output terraform.zip \
+  https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip
+
+  mkdir -p ${VENDOR}/terraform && cd ${VENDOR}/terraform
+  unzip ${VENDOR}/src/terraform.zip -d .
+
+  cd ${VENDOR_BIN}
+  ln -sf ${VENDOR}/terraform/terraform terraform
+}
+
+PATH=${PATH}:${VENDOR_BIN}
+install_packer
+install_terraform

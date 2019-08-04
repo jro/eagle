@@ -1,0 +1,15 @@
+---
+- hosts: all
+  become: yes
+  become_method: sudo
+
+  tasks:
+    # install buildkite
+    - apt_repository: repo='deb https://apt.buildkite.com/buildkite-agent stable main' state=present
+    - apt_key: keyserver=keyserver.ubuntu.com id=32A37959C2FA5C3C99EFBC32A79206696452D198
+    - apt: name=buildkite-agent update_cache=yes
+    - service: name=buildkite-agent enabled=yes
+    # install build deps
+    - apt: name=awscli update_cache=no
+    - apt: name=unzip  update_cache=no
+

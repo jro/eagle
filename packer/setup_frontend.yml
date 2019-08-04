@@ -1,0 +1,26 @@
+---
+- hosts: all
+  become: yes
+  become_method: sudo
+
+  tasks:
+    # clone our repo
+    - apt: name=git update_cache=yes
+    - git: repo='{{ myrepo }}'
+       dest=/srv/eagle
+       accept_hostkey=true
+       version='{{ mycommit }}'
+    # setup nginx
+    - apt: name=nginx update_cache=no
+    - name: install our nginx server config
+      copy: src=/srv/eagle/buildkite/nginx.conf
+        dest=/etc/nginx/sites-available/default
+        mode=0644
+    - service: name=nginx state=restarted enabled=yes
+    # goss for testing
+    - name: install goss
+      get_url: url=https://github.com/aelsabbahy/goss/releases/download/v0.2.3/goss-linux-amd64
+        dest=/usr/local/bin/goss
+        mode=0755
+    - name: run goss tests
+      shell: chdir=/srv/eagle/buildkite goss validate

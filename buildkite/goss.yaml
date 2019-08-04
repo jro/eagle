@@ -1,0 +1,33 @@
+port:
+  tcp:22:
+    listening: true
+    ip:
+    - 0.0.0.0
+  tcp6:22:
+    listening: true
+    ip:
+    - '::'
+  tcp:80:
+    listening: true
+    ip:
+    - 0.0.0.0
+  tcp6:80:
+    listening: true
+    ip:
+    - '::'
+service:
+  ssh:
+    enabled: true
+    running: true
+  nginx:
+    enabled: true
+    running: true
+process:
+  sshd:
+    running: true
+  nginx:
+    running: true
+http:
+  http://localhost:
+    status: 200
+    body: ["Automation for the People!"]

@@ -1,0 +1,13 @@
+#!/bin/bash
+
+set -e
+
+MY_ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && cd .. && pwd )"
+PATH=${PATH}:${MY_ROOT}/vendor/bin:${MY_ROOT}/bin
+
+install_deps
+
+cd ${MY_ROOT}/packer && packer build buildkite.json
+echo "...waiting 120s for AMI to finalize..." && sleep 120
+
+cd ${MY_ROOT}/terraform && terraform apply

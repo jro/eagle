@@ -1,0 +1,45 @@
+#!/bin/bash
+
+set -e
+
+## It's not a perfect test, but our goal here is to gain
+## confidende that our deploy has gone out to all/most
+## frontend servers successfully _and_ is being
+## properly served all the way through the load balancer
+
+MY_ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && cd .. && pwd )"
+MY_INDEX_FILE=${MY_ROOT}/site_src/index.html
+
+MY_URL=""
+while [ "${MY_URL}" == "" ]; do
+    # in case the cloudformation stack is building
+    # for now, lets not break out of this test
+    echo "Fetching ELB URL"
+    MY_URL=$(aws --region us-west-2 \
+                 cloudformation describe-stacks --stack-name 'frontend' \
+                 --output text | grep URL | awk '{ print $7 }')
+    sleep 10
+done
+
+ATTEMPTS=0
+SUCCESSES=0
+while [  ${ATTEMPTS} -lt 500 ]; do
+    echo "Validate root page attempt: ${ATTEMPTS}"
+    let ATTEMPTS+=1
+
+    if curl --silent ${MY_URL} | cmp - ${MY_INDEX_FILE}; then
+        let SUCCESSES+=1
+        echo "..successful validation.."
+    else
+        SUCCESS=0
+    fi
+
+    if [ ${SUCCESSES} -gt 10 ]; then
+        echo "Root page validated 10 times in a row."
+        exit 0
+    fi
+
+    sleep 2
+done
+
+exit 1 # if we reach this, we failed too many times :(

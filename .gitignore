@@ -1,0 +1,6 @@
+aws.env
+terraform/*.tfstate
+terraform/*.tfstate.backup
+terraform/ssh/*
+vendor/*/*
+tmp/*
